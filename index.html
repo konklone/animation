@@ -3,8 +3,8 @@
 <head> 
   <meta charset="utf-8"> 
   <title>Playground</title> 
-  <script type="text/javascript" src="jquery-1.6.1.min.js"></script>
   <script type="text/javascript" src="raphael-1.5.2.min.js"></script>
+  <script type="text/javascript" src="jquery-1.6.1.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -22,6 +22,35 @@
   </style>
   
   <script type="text/javascript">
+    // equilateral triangle
+    // x: center of triangle
+    // y: center of triangle
+    // d: length of one side
+    // o: options
+    //    inverted: flip triangle upside down
+    //    fill: fill color
+    //    stroke: stroke color
+    //    opacity: fill opacity
+    Raphael.fn.triangle = function (x, y, s, d) {
+      var r = s/2;
+      var path = 
+        "m-"+r+",-"+r +
+        "l"+s+",0 -"+r+","+s +
+        "z";
+        
+      return this
+        .path(["M", x, y] + path)
+        .rotate(d)
+        
+        // defaults
+        .attr({ 
+          fill: "#fff",
+          stroke: "none"
+        });
+    };
+      
+    var triangles = [];
+    
     $(function() {
       var c = Raphael("canvas", 640, 480);
       c.clear();
@@ -29,10 +58,32 @@
         fill: "#333",
         stroke: "none"
       });
+      
         
       $("#run").click(function() {
         
+        var size = 20;
+        for (var j=0; j<10; j++) {
+          
+          triangles[j] = [];
+          
+          for (var i=0; i<20; i++) {
+            var x = size + (i * (size/2));
+            var y = size + (j * size);
+            
+            var hue = Math.random();
+            
+            triangles[j][i] = c.triangle(x, y, size, (i % 2 == 1) ? 0 : 180)
+              .attr({
+                fill: "hsb(" + hue + ", 0.7, 1)",
+                //fill: "#369",
+                "fill-opacity": 1
+              });
+          } // end row
+        } // end column
       });
+      
+      $("#run").click();
     });
   </script>
 </head>
