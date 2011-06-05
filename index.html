@@ -1,0 +1,47 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+  <meta charset="utf-8"> 
+  <title>Playground</title> 
+  <script type="text/javascript" src="jquery-1.6.1.min.js"></script>
+  <script type="text/javascript" src="raphael-1.5.2.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      background-color: #fff;
+    }
+    
+    #canvas {
+      height: 480px;
+      margin: 20px auto;
+      text-align: left;
+      width: 640px;
+    }
+  </style>
+  
+  <script type="text/javascript">
+    $(function() {
+      var c = Raphael("canvas", 640, 480);
+      c.clear();
+      c.rect(0, 0, 640, 480, 5).attr({
+        fill: "#333",
+        stroke: "none"
+      });
+        
+      $("#run").click(function() {
+        
+      });
+    });
+  </script>
+</head>
+
+<body>
+  <div id="canvas"></div>
+  <div>
+    <button id="run" type="button">Run</button>
+  </div>
+</body>
+
+</html>
