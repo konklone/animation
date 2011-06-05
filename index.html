@@ -52,28 +52,35 @@
     var triangles = [];
     
     $(function() {
-      var c = Raphael("canvas", 640, 480);
+      var size = 30;
+      var rows = 16;
+      var cols = 40;
+      var height = (rows * size) - (size/2);
+      var width = (cols * (size/2)) - (size/2);
+    
+      var c = Raphael("canvas", width, height);
       c.clear();
-      c.rect(0, 0, 640, 480, 5).attr({
+      c.rect(0, 0, width, height).attr({
         fill: "#333",
-        stroke: "none"
+        stroke: "none",
+        "clip-rect": "0,0,"+width+","+height
       });
       
         
       $("#run").click(function() {
         
-        var size = 20;
-        for (var j=0; j<10; j++) {
+        
+        for (var j=0; j<16; j++) {
           
           triangles[j] = [];
           
-          for (var i=0; i<20; i++) {
-            var x = size + (i * (size/2));
-            var y = size + (j * size);
+          for (var i=0; i<40; i++) {
+            var x = (i * (size/2));
+            var y = (j * size);
             
             var hue = Math.random();
             
-            triangles[j][i] = c.triangle(x, y, size, (i % 2 == 1) ? 0 : 180)
+            triangles[j][i] = c.triangle(x, y, size, ((i+j) % 2 == 1) ? 0 : 180)
               .attr({
                 fill: "hsb(" + hue + ", 0.7, 1)",
                 //fill: "#369",
