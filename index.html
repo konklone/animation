@@ -48,11 +48,12 @@
       };
         
       $(function() {
-        var size = 30;
-        var rows = 16;
-        var cols = 40;
-        var height = (rows * size) - (size/2);
-        var width = (cols * (size/2)) - (size/2);
+        var size = 60;
+        var width = 600;
+        var height = 480;
+        
+        var rows = (height / size) + 1;
+        var cols = ((width / size) * 2) + 1;
         
         var canvas = $(".canvas", elem.parentNode.parentNode).get(0);
         c = Raphael(canvas, width, height);
@@ -63,7 +64,7 @@
           "clip-rect": "0,0,"+width+","+height
         });
         
-        triangles = c.set();
+        triangles = [];
         
         
         for (var j=0; j<rows; j++) {
@@ -80,14 +81,16 @@
               // add some jitter so all triangles are visible
               (flip ? -0.01 : 0.01) +
               // have it tilted diagonally
-              (j * 0.0125);
+              (j * 0.025);
+            
+            // var hue = Math.random();
               
             // force overflow
             if (hue < 0) hue = 1 + hue;
             if (hue > 1) hue = hue - 1;
             
             // mess with saturation and brightness
-            var sat = 0.8; // (Math.random() / 2) + 0.5; // 0.7 def
+            var sat = 0.8; // (Math.random() / 3) + 0.66; // 0.8 def
             // range brightness from 0.66 to 1.0
             var bri = (Math.random() / 3) + 0.66; // 0.9 def
             
@@ -101,23 +104,53 @@
             t._hue = hue;
             t._sat = sat;
             t._bri = bri;
+            t._flip = flip;
+            t._random = (Math.random() > 0.5);
             
-            triangles.push(t);
+            triangles[triangles.length] = t;
           } // end row
         } // end column
         
-  //       var on = false;
-  //       function loop() {
-  //         triangles.animate({
-  //           "fill-opacity": 1// (on ? "#fff" : "#000")
-  //         }, 2000, function() {
-  //           on = !on;
-  //           console.log("done!");
-  //           // loop();
-  //         });
-  //       }
-  //       
-  //       loop();
+        var on = false;
+        function loop() {
+          var first = triangles[0];
+          
+          for (var i=0; i<triangles.length; i++) {
+            
+            function indiv(t) {
+              var step = 0.005; // hue increment
+              var rate = 20; // milliseconds
+              
+              //t._hue = (t._random ? (t._hue + step) : (t._hue + step * 2));
+              t._hue += step;
+              
+              // cause hue overflow
+              if (t._hue < 0) t._hue = 1 + t._hue;
+              if (t._hue > 1) t._hue = t._hue - 1;
+              
+              // prevent animating across the border, it causes awkward black triangles
+              if (t._hue < (0 + step)) t._hue = 0;
+              if (t._hue > (1 - step)) t._hue = 1;
+              
+              var fill = "hsb("+t._hue+","+t._sat+","+t._bri+")";
+              
+              if (i == 0) {
+                t.animate({"fill": fill}, rate, function() {
+                  indiv(t);
+                });
+              } else {
+                t.animateWith(first, {"fill": fill}, rate, function() {
+                  indiv(t);
+                });
+              }
+            }
+            
+            indiv(triangles[i]);
+          }
+          
+        }
+        
+        loop();
         
       });
       
