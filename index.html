@@ -3,103 +3,128 @@
 <head> 
   <meta charset="utf-8"> 
   <title>Playground</title> 
-  <script type="text/javascript" src="raphael-1.5.2.min.js"></script>
-  <script type="text/javascript" src="jquery-1.6.1.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      text-align: center;
-      background-color: #fff;
-    }
-    
-    #canvas {
-      height: 480px;
-      margin: 20px auto;
-      text-align: left;
-      width: 640px;
-    }
-  </style>
-  
+  <script type="text/javascript" src="http://static.tumblr.com/3nqdhkv/6YRlmccr5/raphael-1.5.2.min.js"></script>
+  <script type="text/javascript" src="http://static.tumblr.com/3nqdhkv/kLblmccqq/jquery-1.6.1.min.js"></script>
+  <style></style>
+</head>
+
+<body>  
   <script type="text/javascript">
-    // equilateral triangle
-    // x: center of triangle
-    // y: center of triangle
-    // d: length of one side
-    // o: options
-    //    inverted: flip triangle upside down
-    //    fill: fill color
-    //    stroke: stroke color
-    //    opacity: fill opacity
-    Raphael.fn.triangle = function (x, y, s, d) {
-      var r = s/2;
-      var path = 
-        "m-"+r+",-"+r +
-        "l"+s+",0 -"+r+","+s +
-        "z";
+    (function() {
+    
+      // get the current script tag
+      var scripts = document.getElementsByTagName('script');
+      var elem = scripts[scripts.length-1]; 
+      
+      // will hold the Raphael canvas
+      var c;
+      var triangles;
+      
+      // equilateral triangle
+      // x: center of triangle
+      // y: center of triangle
+      // d: length of one side
+      // o: options
+      //    inverted: flip triangle upside down
+      //    fill: fill color
+      //    stroke: stroke color
+      //    opacity: fill opacity
+      Raphael.fn.triangle = function (x, y, s, d) {
+        var r = s/2;
+        var path = 
+          "m-"+r+",-"+r +
+          "l"+s+",0 -"+r+","+s +
+          "z";
+          
+        return this
+          .path(["M", x, y] + path)
+          .rotate(d)
+          
+          // defaults
+          .attr({ 
+            fill: "#fff",
+            stroke: "none"
+          });
+      };
         
-      return this
-        .path(["M", x, y] + path)
-        .rotate(d)
+      $(function() {
+        var size = 30;
+        var rows = 16;
+        var cols = 40;
+        var height = (rows * size) - (size/2);
+        var width = (cols * (size/2)) - (size/2);
         
-        // defaults
-        .attr({ 
-          fill: "#fff",
-          stroke: "none"
+        var canvas = $(".canvas", elem.parentNode.parentNode).get(0);
+        c = Raphael(canvas, width, height);
+        c.clear();
+        c.rect(0, 0, width, height).attr({
+          fill: "#333",
+          stroke: "none",
+          "clip-rect": "0,0,"+width+","+height
         });
-    };
-      
-    var triangles = [];
-    
-    $(function() {
-      var size = 30;
-      var rows = 16;
-      var cols = 40;
-      var height = (rows * size) - (size/2);
-      var width = (cols * (size/2)) - (size/2);
-    
-      var c = Raphael("canvas", width, height);
-      c.clear();
-      c.rect(0, 0, width, height).attr({
-        fill: "#333",
-        stroke: "none",
-        "clip-rect": "0,0,"+width+","+height
-      });
-      
         
-      $("#run").click(function() {
+        triangles = c.set();
         
         
-        for (var j=0; j<16; j++) {
+        for (var j=0; j<rows; j++) {
           
-          triangles[j] = [];
-          
-          for (var i=0; i<40; i++) {
+          for (var i=0; i<cols; i++) {
             var x = (i * (size/2));
             var y = (j * size);
             
-            var hue = Math.random();
+            // invert alternating within a row, and the polarity of each row
+            var flip = (i+j) % 2 == 1;
             
-            triangles[j][i] = c.triangle(x, y, size, ((i+j) % 2 == 1) ? 0 : 180)
+            // go from low hue to high hue, from left to right
+            var hue = i/cols +
+              // add some jitter so all triangles are visible
+              (flip ? -0.01 : 0.01) +
+              // have it tilted diagonally
+              (j * 0.0125);
+              
+            // force overflow
+            if (hue < 0) hue = 1 + hue;
+            if (hue > 1) hue = hue - 1;
+            
+            // mess with saturation and brightness
+            var sat = 0.8; // (Math.random() / 2) + 0.5; // 0.7 def
+            // range brightness from 0.66 to 1.0
+            var bri = (Math.random() / 3) + 0.66; // 0.9 def
+            
+            var t = c.triangle(x, y, size, (flip ? 0 : 180))
               .attr({
-                fill: "hsb(" + hue + ", 0.7, 1)",
-                //fill: "#369",
+                fill: "hsb("+hue+","+sat+","+bri+")",
                 "fill-opacity": 1
               });
+              
+            // cache on each item to manipulate in animation relative to starting value
+            t._hue = hue;
+            t._sat = sat;
+            t._bri = bri;
+            
+            triangles.push(t);
           } // end row
         } // end column
+        
+  //       var on = false;
+  //       function loop() {
+  //         triangles.animate({
+  //           "fill-opacity": 1// (on ? "#fff" : "#000")
+  //         }, 2000, function() {
+  //           on = !on;
+  //           console.log("done!");
+  //           // loop();
+  //         });
+  //       }
+  //       
+  //       loop();
+        
       });
       
-      $("#run").click();
-    });
+    })();
   </script>
-</head>
 
-<body>
-  <div id="canvas"></div>
-  <div>
-    <button id="run" type="button">Run</button>
-  </div>
+  <div class="canvas"></div>
 </body>
 
 </html>
