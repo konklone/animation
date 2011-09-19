@@ -1,0 +1,138 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+  <meta charset="utf-8"> 
+  <title>Playground</title> 
+  
+  <script type="text/javascript" src="jquery-1.6.1.min.js"></script>
+  <script type="text/javascript" src="processing-1.3.0-api.min.js"></script>
+</head>
+
+<body>  
+  <script type="text/javascript">
+    (function() {
+    
+      // get the current script tag
+      var scripts = document.getElementsByTagName('script');
+      var elem = scripts[scripts.length-1]; 
+        
+      $(function() {
+        var config = {
+          // width of one hexagon - should be a useful multiple of 3, 4, 6, 12, and 16
+          size: 288, 
+          
+          width: 600,
+          height: 480,
+          
+          darkBlue: [10, 0, 80],
+          lightBlue: [180, 190, 255],
+          red: [250, 0, 0],
+          yellow: [180, 180, 10]
+        };
+        
+        function startProcessing(p) {
+        
+          // draws a hexagon of the given diameter and RGB color, at (cX,cY)
+          function hexagon(diameter, fill, cX, cY) {
+            var r = diameter/2;
+            var s = r/2;
+            
+            p.noStroke();
+            p.fill(fill[0], fill[1], fill[2]);
+            
+            p.beginShape();
+            p.vertex(cX-s, cY-r);
+            p.vertex(cX+s, cY-r);
+            p.vertex(cX+r, cY);
+            p.vertex(cX+s, cY+r);
+            p.vertex(cX-s, cY+r);
+            p.vertex(cX-r, cY);
+            p.endShape(p.CLOSE);
+          }
+          
+          // hexagon of stitches, centered at (cx, cY)
+          function stitch(diameter, color, cX, cY) {
+            var r = diameter/2;
+            var s = r/2;
+            
+            p.stroke(color[0], color[1], color[2], 220);
+            p.strokeWeight(2);
+            p.noFill();
+            
+            
+            dashedLine(cX-s, cY-r, cX+s, cY-r);
+          }
+          
+          // a line of stitches from (x1,y1) to (x2,y2)
+          // set the stroke and weight before calling this
+          function dashedLine(x1, y1, x2, y2) {
+            // stitches a constant function of the main hexagon size
+            var stitch = config.size / 12;
+            
+            var dist = p.dist(x1,y1,x2,y2);
+            
+            // test - one line from 0.2 to 0.8 of the width
+            //var sX1 = 
+          }
+          
+          // draws a complete hexagon arrangement
+          function fullHexagon(cX, cY) {
+            var ring = config.size / 4;
+            var halfRing = ring / 2;
+            
+            // base, a dark blue hexagon
+            hexagon(config.size, config.darkBlue, cX, cY);
+            stitch(config.size - halfRing, config.yellow, cX, cY);
+            
+            // next, a light blue hexagon
+            hexagon(config.size - (ring * 1), config.lightBlue, cX, cY);
+            stitch(config.size - (ring * 1) - halfRing, config.red, cX, cY);
+            
+            // almost last, a yellow hexagon
+            hexagon(config.size - (ring * 2), config.yellow, cX, cY);
+            stitch(config.size - (ring * 2) - halfRing, config.lightBlue, cX, cY);
+            
+            // last, a red hexagon
+            hexagon(config.size - (ring * 3), config.red, cX, cY);
+            stitch(config.size - (ring * 3) - halfRing, config.darkBlue, cX, cY);
+            
+            // crease lines from each vertex to the center
+            var r = config.size/2;
+            var s = r/2;
+            
+            p.stroke(0, 0, 0, 128);
+            p.strokeWeight(0.5);
+            p.line(cX-s, cY-r, cX, cY);
+            p.line(cX+s, cY-r, cX, cY);
+            p.line(cX+r, cY, cX, cY);
+            p.line(cX+s, cY+r, cX, cY);
+            p.line(cX-s, cY+r, cX, cY);
+            p.line(cX-r, cY, cX, cY);
+          }
+          
+          p.setup = function() {
+            p.size(config.width, config.height);
+            p.colorMode(p.RGB, 256);
+            p.background(255, 255, 255, 0); // fully transparent
+          };
+          
+          p.draw = function() {
+            var cX = config.width / 2;
+            var cY = config.height / 2;
+            fullHexagon(cX, cY);
+          };
+        }
+        
+        var canvas = $("canvas", elem.parentNode.parentNode);
+        
+        var instance = new Processing(canvas.get(0), startProcessing);
+      });
+      
+    })();
+  </script>
+  
+
+  <canvas></canvas>
+</body>
+
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+  <meta charset="utf-8"> 
+  <title>Playground</title> 
+  
+  <script type="text/javascript" src="jquery-1.6.1.min.js"></script>
+  <script type="text/javascript" src="processing-1.3.0-api.min.js"></script>
+</head>
+
+<body>  
+  <script type="text/javascript">
+    (function() {
+    
+      // get the current script tag
+      var scripts = document.getElementsByTagName('script');
+      var elem = scripts[scripts.length-1]; 
+      
+      var triangles;
+        
+      $(function() {
+        var config = {
+          size: 30, // length of side of each triangle 
+          width: 600,
+          height: 480,
+          
+          // the step of the hue each frame
+          step: 0.02,
+          
+          // range of available hue seen at one time (horizontally)
+          range: 1.3,
+          
+          hue_min: 0,
+          hue_max: 1,
+        };
+        
+        // mouse-over highlight radius
+        var radius = config.size * 2;
+        
+        var rows = (config.height / config.size) + 1;
+        var cols = ((config.width / config.size) * 2) + 1;
+        
+        // array of arrays of triangle metadata, precalculated
+        // for each triangle:
+        //   - hue, brightness, saturation (hue will be incremented on animate)
+        //   - position (x1, y1, x2, y2, x3, y3)
+        //   - random number
+        var triangles = [];
+        
+        function startProcessing(p) {
+          
+          // ensure x stays within a certain range, governed by min<->max, with wraparound
+          // defaults to 0<->1
+          function normalize(x, min, max) {
+            if (!min) min = 0;
+            if (!max) max = 1;
+            var range = max - min;
+            
+            if (x < min) x = range + x;
+            if (x > max) x = x - range;
+            
+            return x;
+          }
+          
+          var mouseOver = false;
+          
+          p.setup = function() {
+            
+            p.size(config.width, config.height);
+            
+            // set color mode to Hue/Saturation/Brightness
+            p.colorMode(p.HSB, 1.0);
+            
+            // don't have a stroke
+            // p.noStroke();
+            p.stroke(0);
+            p.strokeWeight(0.5);
+            
+            // returns an array with the 6 values (3 points) for a triangle
+            function pointsFor(s, cX, cY, flip) {
+              var r = s/2;
+              if (flip)
+                return [cX-r, cY-r, cX+r, cY-r, cX, cY+r];
+              else
+                return [cX, cY-r, cX+r, cY+r, cX-r, cY+r];
+            }
+            
+            var leftHue = Math.random();
+            
+            // initialize triangles
+            for (var j=0; j<rows; j++) {
+              triangles[j] = [];
+              
+              for (var i=0; i<cols; i++) {
+                // midpoint
+                var cX = (i * (config.size/2));
+                var cY = (j * config.size);
+                var flip = (i+j) % 2 == 1;
+                
+                // base of the hue, going up from left to right;
+                var baseHue = ((i/cols) * config.range);
+                
+                // now alter it
+                var hue = baseHue +
+                  // add some jitter so all triangles are visible
+                  (flip ? -0.01 : 0.01) +
+                  // have it tilted diagonally, in proportion to the range
+                  ((j + ((Math.random() < 0.5) ? -1 : 1)) * (config.range * 0.05));
+                
+                
+                // mess with saturation and brightness
+                var sat = 0.85;
+                
+                // range brightness from
+                var bri = (Math.random() / 3) + 0.5;
+                
+                triangles[j][i] = {
+                  center: {x: cX, y: cY},
+                  points: pointsFor(config.size, cX, cY, flip),
+                  color: {hue: hue, sat: sat, bri: bri},
+                  random: Math.random(),
+                };
+              }
+            }
+          };
+        
+          p.draw = function() {
+            
+            // draw all triangles in turn
+            for (var j=0; j<rows; j++) {
+              for (var i=0; i<cols; i++) {
+                var t = triangles[j][i];
+                var ps = t.points;
+                
+                t.color.hue = normalize(t.color.hue + config.step, config.hue_min, config.hue_max);
+                
+                if (mouseOver) {
+                  var xDiff = Math.abs(p.mouseX - t.center.x);
+                  var yDiff = Math.abs(p.mouseY - t.center.y);
+                  if (xDiff < radius && yDiff < radius)
+                    p.fill(normalize(t.color.hue + 0.5), t.color.sat, t.color.bri);
+                  else
+                    p.fill(t.color.hue, t.color.sat, t.color.bri);
+                } else
+                  p.fill(t.color.hue, t.color.sat, t.color.bri);
+                
+                
+                p.triangle(ps[0], ps[1], ps[2], ps[3], ps[4], ps[5]);
+              }
+            }
+            
+          };
+          
+          p.mousePressed = function() {
+            // left mouse button flips direction
+            if (p.mouseButton == p.LEFT)
+              config.step *= -1;
+              
+            // right mouse button speeds it up
+            else
+              config.step += (config.step > 0 ? 0.005 : -0.005);
+          };
+          
+          p.mouseOver = function() {
+            mouseOver = true;
+          };
+          
+          p.mouseOut = function() {
+            mouseOver = false;
+          };
+          
+        }
+        
+        var canvas = $("canvas", elem.parentNode.parentNode).get(0);
+        var instance = new Processing(canvas, startProcessing);
+      });
+      
+    })();
+  </script>
+  
+
+  <canvas></canvas>
+</body>
+
+</html>
