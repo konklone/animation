@@ -1,0 +1,67 @@
+
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+  <meta charset="utf-8"> 
+  <title>Playground</title> 
+  
+  <script type="text/javascript" src="jquery-1.6.1.min.js"></script>
+  <script type="text/javascript" src="processing-1.3.0-api.min.js"></script>
+</head>
+ 
+<body>  
+  <script type="text/javascript">
+    (function() {
+    
+      // get the script tag I'm inside of right now
+      var scripts = document.getElementsByTagName('script');
+      var elem = scripts[scripts.length-1]; 
+      
+      
+      $(function() {
+      
+        var config = {
+          width: 600,
+          height: 480
+        };
+        
+        
+        function startProcessing(p) {
+          var mouseOver = false;
+          
+          p.setup = function() {
+            
+            p.size(config.width, config.height);
+            
+          };
+        
+          p.draw = function() {
+            p.background(30);
+            
+          };
+          
+          p.mouseOver = function() {
+            mouseOver = true;
+          };
+          
+          p.mouseOut = function() {
+            mouseOver = false;
+          };
+          
+        }
+        
+        // find the canvas element adjacent to this script tag
+        var canvas = $("canvas", elem.parentNode.parentNode).get(0);
+        
+        // go
+        var instance = new Processing(canvas, startProcessing);
+      });
+      
+    })();
+  </script>
+  
+ 
+  <canvas></canvas>
+</body>
+ 
+</html>
