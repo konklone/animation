@@ -31,6 +31,7 @@
         };
         
         function startProcessing(p) {
+          window.p = p;
         
           // draws a hexagon of the given diameter and RGB color, at (cX,cY)
           function hexagon(diameter, fill, cX, cY) {
@@ -52,27 +53,59 @@
           
           // hexagon of stitches, centered at (cx, cY)
           function stitch(diameter, color, cX, cY) {
-            var r = diameter/2;
-            var s = r/2;
-            
-            p.stroke(color[0], color[1], color[2], 220);
-            p.strokeWeight(2);
+            p.stroke(color[0], color[1], color[2], 180);
+            p.strokeWeight(1);
             p.noFill();
             
-            
+            var r = diameter/2;
+            var s = r/2;
+            dashedLine(cX-r, cY, cX-s, cY-r);
             dashedLine(cX-s, cY-r, cX+s, cY-r);
+            dashedLine(cX+s, cY-r, cX+r, cY);
+            
+            dashedLine(cX+r, cY, cX+s, cY+r);
+            dashedLine(cX+s, cY+r, cX-s, cY+r);
+            dashedLine(cX-s, cY+r, cX-r, cY);
           }
           
           // a line of stitches from (x1,y1) to (x2,y2)
           // set the stroke and weight before calling this
           function dashedLine(x1, y1, x2, y2) {
             // stitches a constant function of the main hexagon size
-            var stitch = config.size / 12;
+            var stitch = config.size / 72;
             
+            // get distance and angle
             var dist = p.dist(x1,y1,x2,y2);
+            var dx = x2-x1;
+            var dy = y2-y1;
+            var angle = p.atan2(dx, dy);
+            var sin = p.sin(angle);
+            var cos = p.cos(angle);
             
-            // test - one line from 0.2 to 0.8 of the width
-            //var sX1 = 
+            var sX = sin * stitch;
+            var sY = cos * stitch;
+            
+            var startX = x1; // + sX; // x1 + (sin * (dist * 0.8));
+            var startY = y1; // + sY; // y1 + (cos * (dist * 0.8));
+            
+            // if this is going leftwards, we often want to invert the loop check
+            var negX = (sX < 0);
+            var negY = (sY < 0);
+            
+            while(negX ? (startX > x2) : (startX < x2)) {
+              var endX = startX + sX;
+              var endY = startY + sY;
+              
+              if (negX ? (endX < x2) : (endX > x2))
+                endX = x2;
+              if (negY ? (endY < y2) : (endY > y2))
+                endY = y2;
+              
+              p.line(startX, startY, endX, endY);
+              
+              startX += (sX * 2);
+              startY += (sY * 2);
+            }
           }
           
           // draws a complete hexagon arrangement
@@ -90,11 +123,11 @@
             
             // almost last, a yellow hexagon
             hexagon(config.size - (ring * 2), config.yellow, cX, cY);
-            stitch(config.size - (ring * 2) - halfRing, config.lightBlue, cX, cY);
+            stitch(config.size - (ring * 2) - halfRing, config.darkBlue, cX, cY);
             
             // last, a red hexagon
             hexagon(config.size - (ring * 3), config.red, cX, cY);
-            stitch(config.size - (ring * 3) - halfRing, config.darkBlue, cX, cY);
+            stitch(config.size - (ring * 3) - halfRing, config.lightBlue, cX, cY);
             
             // crease lines from each vertex to the center
             var r = config.size/2;
