@@ -19,15 +19,18 @@
       $(function() {
         var config = {
           // width of one hexagon - should be a useful multiple of 3, 4, 6, 12, and 16
-          size: 288, 
+          size: 144, 
           
           width: 600,
           height: 480,
           
-          darkBlue: [10, 0, 80],
+          darkBlue: [10, 0, 120],
           lightBlue: [180, 190, 255],
-          red: [250, 0, 0],
-          yellow: [180, 180, 10]
+          red: [220, 0, 0],
+          yellow: [220, 220, 10],
+          
+          // affects how close stitches are together - 2 means 50/50 stitch/non-stitch
+          stitchDensity: 1.5
         };
         
         function startProcessing(p) {
@@ -35,43 +38,45 @@
         
           // draws a hexagon of the given diameter and RGB color, at (cX,cY)
           function hexagon(diameter, fill, cX, cY) {
-            var r = diameter/2;
-            var s = r/2;
+            var r = diameter/2; // side of eq. triangle
+            var s = r/2; // half of this
+            var h = Math.sqrt((r*r) - (s*s)); // height of eq. triangle
             
             p.noStroke();
             p.fill(fill[0], fill[1], fill[2]);
             
             p.beginShape();
-            p.vertex(cX-s, cY-r);
-            p.vertex(cX+s, cY-r);
+            p.vertex(cX-s, cY-h);
+            p.vertex(cX+s, cY-h);
             p.vertex(cX+r, cY);
-            p.vertex(cX+s, cY+r);
-            p.vertex(cX-s, cY+r);
+            p.vertex(cX+s, cY+h);
+            p.vertex(cX-s, cY+h);
             p.vertex(cX-r, cY);
             p.endShape(p.CLOSE);
           }
           
           // hexagon of stitches, centered at (cx, cY)
           function stitch(diameter, color, cX, cY) {
-            p.stroke(color[0], color[1], color[2], 180);
+            p.stroke(color[0], color[1], color[2], 140);
             p.strokeWeight(1);
             p.noFill();
             
             var r = diameter/2;
             var s = r/2;
-            dashedLine(cX-r, cY, cX-s, cY-r);
-            dashedLine(cX-s, cY-r, cX+s, cY-r);
-            dashedLine(cX+s, cY-r, cX+r, cY);
+            var h = Math.sqrt((r*r) - (s*s)); // height of eq. triangle
             
-            dashedLine(cX+r, cY, cX+s, cY+r);
-            dashedLine(cX+s, cY+r, cX-s, cY+r);
-            dashedLine(cX-s, cY+r, cX-r, cY);
+            dashedLine(cX-r, cY, cX-s, cY-h);
+            dashedLine(cX-s, cY-h, cX+s, cY-h);
+            dashedLine(cX+s, cY-h, cX+r, cY);
+            dashedLine(cX+r, cY, cX+s, cY+h);
+            dashedLine(cX+s, cY+h, cX-s, cY+h);
+            dashedLine(cX-s, cY+h, cX-r, cY);
           }
           
           // a line of stitches from (x1,y1) to (x2,y2)
           // set the stroke and weight before calling this
           function dashedLine(x1, y1, x2, y2) {
-            // stitches a constant function of the main hexagon size
+            // stitche size is a constant function of the main hexagon size
             var stitch = config.size / 72;
             
             // get distance and angle
@@ -82,64 +87,85 @@
             var sin = p.sin(angle);
             var cos = p.cos(angle);
             
+            // the x and y offsets of a single stitch
             var sX = sin * stitch;
             var sY = cos * stitch;
             
-            var startX = x1; // + sX; // x1 + (sin * (dist * 0.8));
-            var startY = y1; // + sY; // y1 + (cos * (dist * 0.8));
+            // initialize stitches to the beginning of the line
+            var startX = x1;
+            var startY = y1;
             
-            // if this is going leftwards, we often want to invert the loop check
-            var negX = (sX < 0);
-            var negY = (sY < 0);
+            // checks are inverted if we're going in a negative direction
+            var negX = sX < 0;
+            var negY = sY < 0;
             
             while(negX ? (startX > x2) : (startX < x2)) {
               var endX = startX + sX;
               var endY = startY + sY;
               
-              if (negX ? (endX < x2) : (endX > x2))
+              // clip the last stitches if need be
+              // optimization - x and y should only overrrun in tandem, so only check x
+              if (negX ? (endX < x2) : (endX > x2)) {
                 endX = x2;
-              if (negY ? (endY < y2) : (endY > y2))
                 endY = y2;
+              }
               
               p.line(startX, startY, endX, endY);
               
-              startX += (sX * 2);
-              startY += (sY * 2);
+              // jump to the start of the next stitch
+              startX += (sX * config.stitchDensity);
+              startY += (sY * config.stitchDensity);
             }
           }
           
           // draws a complete hexagon arrangement
-          function fullHexagon(cX, cY) {
+          function fullHexagon(cX, cY, flip) {
             var ring = config.size / 4;
             var halfRing = ring / 2;
             
+            // stitch/color order
+            var normal = [
+              [config.darkBlue, config.yellow],
+              [config.lightBlue, config.red],
+              [config.yellow, config.darkBlue],
+              [config.red, config.lightBlue]
+            ];
+            var reverse = [
+              [config.red, config.lightBlue],
+              [config.yellow, config.darkBlue],
+              [config.lightBlue, config.red],
+              [config.darkBlue, config.yellow]
+            ];
+            
+            var use = flip ? reverse : normal;
+            
             // base, a dark blue hexagon
-            hexagon(config.size, config.darkBlue, cX, cY);
-            stitch(config.size - halfRing, config.yellow, cX, cY);
+            hexagon(config.size, use[0][0], cX, cY);
+            stitch(config.size - halfRing, use[0][1], cX, cY);
             
             // next, a light blue hexagon
-            hexagon(config.size - (ring * 1), config.lightBlue, cX, cY);
-            stitch(config.size - (ring * 1) - halfRing, config.red, cX, cY);
+            hexagon(config.size - (ring * 1), use[1][0], cX, cY);
+            stitch(config.size - (ring * 1) - halfRing, use[1][1], cX, cY);
             
             // almost last, a yellow hexagon
-            hexagon(config.size - (ring * 2), config.yellow, cX, cY);
-            stitch(config.size - (ring * 2) - halfRing, config.darkBlue, cX, cY);
+            hexagon(config.size - (ring * 2), use[2][0], cX, cY);
+            stitch(config.size - (ring * 2) - halfRing, use[2][1], cX, cY);
             
             // last, a red hexagon
-            hexagon(config.size - (ring * 3), config.red, cX, cY);
-            stitch(config.size - (ring * 3) - halfRing, config.lightBlue, cX, cY);
+            hexagon(config.size - (ring * 3), use[3][0], cX, cY);
+            stitch(config.size - (ring * 3) - halfRing, use[3][1], cX, cY);
             
             // crease lines from each vertex to the center
             var r = config.size/2;
             var s = r/2;
-            
-            p.stroke(0, 0, 0, 128);
+            var h = Math.sqrt((r*r) - (s*s)); // height of eq. triangle
+            p.stroke(0, 0, 0, 100);
             p.strokeWeight(0.5);
-            p.line(cX-s, cY-r, cX, cY);
-            p.line(cX+s, cY-r, cX, cY);
+            p.line(cX-s, cY-h, cX, cY);
+            p.line(cX+s, cY-h, cX, cY);
             p.line(cX+r, cY, cX, cY);
-            p.line(cX+s, cY+r, cX, cY);
-            p.line(cX-s, cY+r, cX, cY);
+            p.line(cX+s, cY+h, cX, cY);
+            p.line(cX-s, cY+h, cX, cY);
             p.line(cX-r, cY, cX, cY);
           }
           
@@ -152,6 +178,39 @@
           p.draw = function() {
             var cX = config.width / 2;
             var cY = config.height / 2;
+            
+            var r = config.size/2;
+            var s = r/2;
+            var h = Math.sqrt((r*r) - (s*s)); // height of eq. triangle
+            
+            // outer corners first
+            fullHexagon(cX-(s*2), cY-(h*2), true);
+            fullHexagon(cX+(s*2), cY-(h*2), true);
+            fullHexagon(cX+(r*2), cY, true);
+            fullHexagon(cX+(s*2), cY+(h*2), true);
+            fullHexagon(cX-(s*2), cY+(h*2), true);
+            fullHexagon(cX-(r*2), cY, true);
+            
+            // outer edges next
+            fullHexagon(cX-r-s, cY-h, true);
+            fullHexagon(cX, cY-(h*2), true);
+            fullHexagon(cX+r+s, cY-h, true);
+            fullHexagon(cX+r+s, cY+h, true);
+            fullHexagon(cX, cY+(h*2), true);
+            fullHexagon(cX-r-s, cY+h, true);
+            
+            // hexagon with center at each point, in turn
+            // this is not complete, but good enough for now
+            // TODO: make it so we're not creating full hexagons, but allow for 1/3 and 1/2 hexagons
+            // to save on drawing, and to avoid the impossible situation of having every hexagon in the
+            // center ring overlap each other
+            fullHexagon(cX-s, cY-h);
+            fullHexagon(cX+s, cY-h);
+            fullHexagon(cX+r, cY);
+            fullHexagon(cX+s, cY+h);
+            fullHexagon(cX-s, cY+h);
+            fullHexagon(cX-r, cY);
+            
             fullHexagon(cX, cY);
           };
         }
