@@ -34,9 +34,8 @@
         };
         
         function startProcessing(p) {
-          window.p = p; // for debug use
         
-          // draws a hexagon of the given diameter and RGB color, at (cX,cY)
+          // draws a hexagon of the given diameter and RGB color
           function hexagon(diameter, fill, segments) {
             var r = diameter/2; // side of eq. triangle
             var s = r/2; // half of this
@@ -80,10 +79,10 @@
           // a line of stitches from (x1,y1) to (x2,y2)
           // set the stroke and weight before calling this
           function dashedLine(x1, y1, x2, y2) {
-            // stitche size is a constant function of the main hexagon size
+            // stitch size is a constant function of the main hexagon size
             var stitch = config.size / 72;
             
-            // get distance and angle
+            // get distance and angle of line
             var dist = p.dist(x1,y1,x2,y2);
             var dx = x2-x1;
             var dy = y2-y1;
@@ -125,16 +124,12 @@
           // draws a complete hexagon arrangement
           function fullHexagon(cX, cY, flip, segments, start) {
             p.pushMatrix();
+            
+            // move origin to the center of the hexagon, rotate to start
             p.translate(cX, cY);
+            p.rotate(p.radians(60) * start);
             
-            if (!segments) {
-              segments = 6;
-              start = 0;
-            }
-            
-            if (start > 0)
-              p.rotate(p.radians(60) * start);
-              
+            // width of the bands of color, and the midpoint for the stitches
             var ring = config.size / 4;
             var halfRing = ring / 2;
             
@@ -151,22 +146,17 @@
               [config.lightBlue, config.red],
               [config.darkBlue, config.yellow]
             ];
-            
             var use = flip ? reverse : normal;
             
-            // base, a dark blue hexagon
             hexagon(config.size, use[0][0], segments);
             stitch(config.size - halfRing, use[0][1], segments);
             
-            // next, a light blue hexagon
             hexagon(config.size - (ring * 1), use[1][0], segments);
             stitch(config.size - (ring * 1) - halfRing, use[1][1], segments);
             
-            // almost last, a yellow hexagon
             hexagon(config.size - (ring * 2), use[2][0], segments);
             stitch(config.size - (ring * 2) - halfRing, use[2][1], segments);
             
-            // last, a red hexagon
             hexagon(config.size - (ring * 3), use[3][0], segments);
             stitch(config.size - (ring * 3) - halfRing, use[3][1], segments);
             
@@ -216,11 +206,7 @@
             fullHexagon(0-r-s, 0+h,     true, 3, 3);
             fullHexagon(0-r-s, 0-h,     true, 3, 4);
             
-            // hexagon with center at each point, in turn
-            // this is not complete, but good enough for now
-            // TODO: make it so we're not creating full hexagons, but allow for 1/3 and 1/2 hexagons
-            // to save on drawing, and to avoid the impossible situation of having every hexagon in the
-            // center ring overlap each other
+            // inner ring
             fullHexagon(0-s, 0-h, false, 3, 5);
             fullHexagon(0+s, 0-h, false, 3, 0);
             fullHexagon(0+r, 0,   false, 3, 1);
@@ -228,6 +214,7 @@
             fullHexagon(0-s, 0+h, false, 3, 3);
             fullHexagon(0-r, 0,   false, 3, 4);
             
+            // inner hexagon, the only complete one
             fullHexagon(0, 0, false, 6, 0);
           };
         }
