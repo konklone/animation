@@ -11,23 +11,36 @@
 <body>
 
 <script type="text/javascript">
-  $(function() {
-    var width = 400, height = 300;
+  var renderer, scene, camera;
+  
+  var sphere;
 
-    // set up renderer, tie it to DOM
-    var renderer = new THREE.WebGLRenderer();
-    renderer.setSize(width, height);
+  var config = {
+    webgl: false,
+    width: 400,
+    height: 300
+  }
+
+  $(function() {
+    init();
+    animate();
+  });
+
+  function init() {
+    // webGL or Canvas?
+    renderer = config.webgl ? new THREE.WebGLRenderer() : new THREE.CanvasRenderer();
+    renderer.setSize(config.width, config.height);
     $("#container").append(renderer.domElement);
 
     // a new scene
-    var scene = new THREE.Scene();
+    scene = new THREE.Scene();
 
     // camera
     var viewAngle = 45,
-      aspect = width / height,
+      aspect = config.width / config.height,
       near = 0.1,
       far = 10000;
-    var camera = new THREE.PerspectiveCamera(viewAngle, aspect, near, far);
+    camera = new THREE.PerspectiveCamera(viewAngle, aspect, near, far);
     scene.add(camera);
     camera.position.z = 300; // the camera starts at 0,0,0, so pull it back
 
@@ -35,13 +48,13 @@
     /****** objects in scene *********/
     var sphereMaterial = new THREE.MeshLambertMaterial({
       color: 0xCC0000,
-      wireframe: false
+      wireframe: true
     });
 
-    var radius = 50,
+    var radius = 100,
         segments = 16,
         rings = 16;
-    var sphere = new THREE.Mesh(
+    sphere = new THREE.Mesh(
       new THREE.SphereGeometry(radius, segments, rings),
       sphereMaterial
     );
@@ -59,14 +72,16 @@
 
     // add to the scene
     scene.add(pointLight);
+  }
 
+  function animate() {
+    requestAnimationFrame(animate);
 
-    /***** render ******/
-    requestAnimationFrame(function(time) {
-      renderer.render(scene, camera);
-    });
+    sphere.rotation.x = Date.now() * 0.0005;
+    sphere.rotation.y = Date.now() * 0.001;
 
-  });
+    renderer.render(scene, camera);
+  }
 </script>
 
   <div id="container">
